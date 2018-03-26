@@ -1,4 +1,5 @@
 function Get-AuthHeader {
+    ## GREAT RESOURCE ------> http://www.myfatblog.co.uk/index.php/2017/02/powershell-access-to-the-graph-api-2/
     ##Tenant and App Specific Values
     ##Add the ones that you captured during the Azure portal piece here!
     $appID = "<<APP ID GOES HERE>>"
