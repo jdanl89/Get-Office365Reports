@@ -1,24 +1,27 @@
 function Get-AuthHeader {
-    $TenantName = "tenant.com"
-    $ClientID = "12345678-1234-5678-1234-123456789012"
-    $ClientSecret = "secretCode"
-    $ResourceAppIdURI = "https://graph.microsoft.com"
-    $Authority = "https://login.windows.net/$TenantName/"
+    ##Tenant and App Specific Values
+    ##Add the ones that you captured during the Azure portal piece here!
+    $appID = "<<APP ID GOES HERE>>"
+    $appSecret="<<APP SECRET KEY GOES HERE>>"
+    ##Needs to be encoded so that special characters get passed through the URL correctly
+    Add-Type -AssemblyName System.Web
+    $appSecretEncoded = [System.Web.HttpUtility]::UrlEncode($appSecret)
 
-    Import-Module MSOnline
+    $tokenAuthURI = "<<OAUTH2.0 TOKEN ENDPOINT URL GOES HERE>>"
 
-    $Modulebase = (Get-Module MSONline | Sort-Object Version -Descending | Select-Object -First 1).ModuleBase
-    $Adal = "{0}\Microsoft.IdentityModel.Clients.ActiveDirectory.dll" -f $Modulebase
-    $AdalForms = "{0}\Microsoft.IdentityModel.Clients.ActiveDirectory.WindowsForms.dll" -f $Modulebase
+    ##We create a small text body with the values
+    $requestBody = "grant_type=client_credentials" + 
+        "&client_id=$appID" +
+        "&client_secret=$appSecretEncoded" +
+        "&resource=https://graph.microsoft.com/"
 
-    [System.Reflection.Assembly]::LoadFrom($Adal) | Out-Null
-    [System.Reflection.Assembly]::LoadFrom($AdalForms) | Out-Null
+    ##Then we use the Token Endpoint URI and pass it the values in the body of the request
+    $tokenResponse = Invoke-RestMethod -Method Post -Uri $tokenAuthURI -body $requestBody -ContentType "application/x-www-form-urlencoded"
 
-    $ClientCred = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.ClientCredential" -ArgumentList $ClientID, $ClientSecret
-    $AuthContext = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext" -ArgumentList $Authority, $false
-    $Token = $Authcontext.AcquireTokenAsync($ResourceAppIdURI, $ClientCred)
+    ##This response provides our Bearer Token
+    $accessToken = $tokenResponse.access_token
 
-    $AuthHeader = @{"Authorization" = $Token.Result.CreateAuthorizationHeader()}
+    $AuthHeader = @{"Authorization"="Bearer $accessToken"}
 
     return $AuthHeader
 }
